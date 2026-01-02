@@ -435,6 +435,8 @@ def process_whisper(input_wav, output_srt, model_size):
                         print("Success: GPU retry with int8_float32 worked!")
                         # 成功后直接返回，不需要继续回退
                         IS_TRANSCRIBING = False
+                        # 显式退出，防止后续代码（如异常处理或函数尾部）导致非预期行为
+                        sys.exit(0)
                         return
                     else:
                          print("Warning: GPU int8_float32 also yielded 0 segments.")

@@ -436,7 +436,8 @@ def process_whisper(input_wav, output_srt, model_size):
                         # 成功后直接返回，不需要继续回退
                         IS_TRANSCRIBING = False
                         # 显式退出，防止后续代码（如异常处理或函数尾部）导致非预期行为
-                        sys.exit(0)
+                        # 使用 os._exit(0) 而非 sys.exit(0) 以避免 C++ 扩展库 (如 ctranslate2) 在析构时崩溃导致非零退出码
+                        os._exit(0)
                         return
                     else:
                          print("Warning: GPU int8_float32 also yielded 0 segments.")
@@ -482,7 +483,7 @@ def process_whisper(input_wav, output_srt, model_size):
         if os.path.exists(output_srt) and os.path.getsize(output_srt) > 100:
              print("Subtitle file generated successfully despite the error. Skipping fallback.")
              # 确保正常退出，不返回错误码
-             sys.exit(0)
+             os._exit(0)
 
         if using_gpu:
             print("Fatal GPU runtime error detected. Attempting fallback to CPU...")

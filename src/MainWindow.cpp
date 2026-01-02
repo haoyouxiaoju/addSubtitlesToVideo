@@ -661,7 +661,7 @@ void MainWindow::onTranscribeFinished(int exitCode)
     }
 
     if (exitCode != 0) {
-        log("错误: 语音转写失败");
+        log("错误: 语音转写失败 (Exit Code: " + QString::number(exitCode) + ")");
         QListWidgetItem *item = new QListWidgetItem(currentTask.inputPath + " -> 失败 (转写错误)");
         item->setForeground(Qt::red);
         outputListWidget->addItem(item);

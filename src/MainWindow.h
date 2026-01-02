@@ -13,6 +13,9 @@
 #include <QCloseEvent>
 #include <QProcess>
 #include "FileDropListWidget.h"
+#include <QCheckBox>
+
+
 
 /**
  * @brief 任务信息结构体
@@ -116,6 +119,8 @@ private:
     QLineEdit *outputDirEdit;
     QPushButton *addFilesButton;
     QPushButton *selectOutputDirButton;
+    QCheckBox *exportSubtitleCheckbox; // 导出字幕选项
+    QCheckBox *exportAudioCheckbox;    // 导出音频选项
     // QPushButton *startButton; // 自动开始，不需要按钮
     QTextEdit *logArea;
     QProgressBar *progressBar;

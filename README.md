@@ -73,6 +73,9 @@ set(CMAKE_PREFIX_PATH "D:/download/qt/6.9.3/msvc2022_64")
 ```powershell
 .\build_project.bat
 ```
+需要修改的地方：
+- `set(CMAKE_PREFIX_PATH "D:/download/qt/6.9.3/msvc2022_64")`：根据您的 Qt 安装路径修改。
+- `cmake -B build -G "Visual Studio 17 2022" -A x64`：如果您使用的是不同版本的 Visual Studio，请修改 `17 2022` 为您的版本号。
 
 #### 方法 B: 手动编译
 在项目根目录下打开 PowerShell，执行以下命令：

@@ -40,6 +40,16 @@ python transcribe.py <input_wav> <output_srt>
 - `onTranscribeFinished(int exitCode)`: 转录完成回调
 - `onEmbedSubtitleFinished(int exitCode)`: 视频合成完成回调
 
+**输出文件结构**:
+```
+[输出目录]
+├── output.mp4 (最终合成视频)
+└── Extra
+    └── output
+        ├── [文件名].srt (字幕文件，可选保留)
+        └── [文件名].wav (音频文件，可选保留)
+```
+
 ## 2. 数据库表结构
 本项目不涉及数据库存储。
 
@@ -48,6 +58,9 @@ python transcribe.py <input_wav> <output_srt>
 相关配置 (如模型路径, FFmpeg参数) 硬编码在 `MainWindow.cpp` 和 `transcribe.py` 中。
 - 模型名称: `vosk-model-small-cn-0.22`
 - 模型下载地址: `https://alphacephei.com/vosk/models/`
+- **UI 配置**: 
+  - 导出字幕文本: 默认关闭
+  - 导出音频文件: 默认关闭
 
 ## 4. 日志格式
 **UI日志**:

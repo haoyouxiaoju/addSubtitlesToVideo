@@ -121,6 +121,13 @@ void MainWindow::initUI()
     // selectOutputDirButton->setIcon(QIcon::fromTheme("folder-open"));
     connect(selectOutputDirButton, &QPushButton::clicked, this, &MainWindow::selectOutputDir);
 
+    // 导出选项
+    exportSubtitleCheckbox = new QCheckBox("导出字幕文本");
+    exportSubtitleCheckbox->setChecked(false); // 默认不打开
+
+    exportAudioCheckbox = new QCheckBox("导出音频文件");
+    exportAudioCheckbox->setChecked(false); // 默认不打开
+
     topLayout->addWidget(addFilesButton);
     topLayout->addWidget(new QLabel("|"));
     topLayout->addWidget(engineLabel);
@@ -128,6 +135,9 @@ void MainWindow::initUI()
     topLayout->addWidget(modelLabel);
     topLayout->addWidget(modelCombo);
     topLayout->addWidget(helpButton);
+    topLayout->addWidget(new QLabel("|"));
+    topLayout->addWidget(exportSubtitleCheckbox); // 添加到界面
+    topLayout->addWidget(exportAudioCheckbox);    // 添加到界面
     topLayout->addWidget(new QLabel("|"));
     topLayout->addWidget(outputDirEdit);
     topLayout->addWidget(selectOutputDirButton);
@@ -352,17 +362,30 @@ void MainWindow::processNextTask()
         targetDir = sourceDir;
     }
 
-    // 使用临时目录存放中间文件 (与输入文件同目录，避免跨盘问题)
-    tempAudioPath = sourceDir + "/" + baseName + "_temp_audio.wav";
-    outputSubtitlePath = targetDir + "/" + baseName + ".srt";
+    // 设置视频输出路径 (保持原样: [targetDir]/[BaseName]_subtitled.[ext])
+    currentTask.outputVideoPath = targetDir + "/" + baseName + "_subtitled." + fileInfo.suffix();
+
+    // 确定额外输出目录 (Extra/output)
+    QString extraOutputDir = targetDir + "/Extra/"+baseName;
+    QDir extraDir(extraOutputDir);
+    if (!extraDir.exists()) {
+        if (!extraDir.mkpath(".")) {
+            log("错误: 无法创建额外输出目录: " + extraOutputDir);
+            // 如果创建失败，回退到 targetDir，或者直接报错停止？
+            // 这里回退到 targetDir 以防万一
+            extraOutputDir = targetDir;
+        }
+    }
+
+    // 使用 Extra/output 目录存放中间文件和最终导出的文件
+    tempAudioPath = extraOutputDir + "/" + baseName + ".wav"; // 统一使用 wav 扩展名
+    outputSubtitlePath = extraOutputDir + "/" + baseName + ".srt";
     
     // 如果输出目录与源目录不同，确保输出目录存在
     QDir dir(targetDir);
     if (!dir.exists()) {
         dir.mkpath(".");
     }
-
-    currentTask.outputVideoPath = targetDir + "/" + baseName + "_subtitled." + fileInfo.suffix();
 
     // 检查并删除旧文件
     if (QFile::exists(tempAudioPath)) QFile::remove(tempAudioPath);
@@ -677,7 +700,11 @@ void MainWindow::onTranscribeFinished(int exitCode)
 
     // 复制 SRT
     if (QFile::exists(tempSrtPath)) QFile::remove(tempSrtPath);
-    QFile::copy(outputSubtitlePath, tempSrtPath);
+    if (!QFile::copy(outputSubtitlePath, tempSrtPath)) {
+        log("错误: 无法复制字幕文件到渲染目录: " + tempSrtPath);
+    }
+    // 重要: copy 之后，源文件仍被占用吗？通常不会，但为了安全起见，这里不操作源文件
+
 
     log("语音转写完成，开始合成视频(硬字幕)...");
     statusLabel->setText("步骤 3/3: 合成字幕(硬字幕) - " + QFileInfo(currentTask.inputPath).baseName());
@@ -731,12 +758,27 @@ void MainWindow::onEmbedSubtitleFinished(int exitCode)
         progressBar->setValue(100);
     }
 
-    // 清理临时文件
-    if (QFile::exists(tempAudioPath)) {
-        QFile::remove(tempAudioPath);
+    // 清理临时文件 (根据用户选项决定是否保留)
+    if (!exportAudioCheckbox->isChecked()) {
+        if (QFile::exists(tempAudioPath)) {
+            bool removed = QFile::remove(tempAudioPath);
+            if (!removed) log("警告: 无法删除临时音频文件: " + tempAudioPath);
+        }
+    } else {
+        log("保留音频文件: " + tempAudioPath);
     }
     
-    // 清理渲染用的临时字幕文件
+    // 如果不导出字幕，删除字幕文件
+    if (!exportSubtitleCheckbox->isChecked()) {
+        if (QFile::exists(outputSubtitlePath)) {
+            bool removed = QFile::remove(outputSubtitlePath);
+            if (!removed) log("警告: 无法删除临时字幕文件: " + outputSubtitlePath);
+        }
+    } else {
+        log("保留字幕文件: " + outputSubtitlePath);
+    }
+    
+    // 清理渲染用的临时字幕文件 (始终清理，这是为了渲染生成的副本)
     QString targetDir = QFileInfo(currentTask.outputVideoPath).absolutePath();
     QString tempSrtPath = targetDir + "/temp_render_subs.srt";
     if (QFile::exists(tempSrtPath)) {
